@@ -41,6 +41,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
     // to verify this wallet belongs to this ICO creator
     function askToVerifyIcoCreator(Business business) avoidRecursiveCall {
         require(!isContractAddress(msg.sender)); //TODO: remove line to support smart-contract wallets
+        require(businessByIcoCreator[msg.sender] == address(0x0));
 
         AskToVerifyIcoCreator(business, msg.sender);
     }
@@ -79,8 +80,6 @@ contract Registrator is Ownable, AvoidRecursiveCall {
         require(coinSale.owner() == owner);
 
         businessByIcoCreator[icoCreator] = business;
-        coinSale.setIcoCreator(icoCreator);
-        coinSale.setBusiness(business);
         business.addCoinSale(coinSale);
     }
 

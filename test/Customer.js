@@ -1,25 +1,22 @@
-require('babel-register');
-require('babel-polyfill');
-
 //import expectThrow from 'zeppelin-solidity/test/helpers/expectThrow';
 import expectThrow from './Helpers/expectThrow';
 
-var Registrator = artifacts.require("./Registrator.sol");
-var Customer = artifacts.require("./Customer.sol");
-var CoinSale = artifacts.require("./CoinSale.sol");
+const Registrator = artifacts.require("./Registrator.sol");
+const Customer = artifacts.require("./Customer.sol");
+const CoinSale = artifacts.require("./CoinSale.sol");
 
 contract('Customer', function(accounts) {
 
     it("should add wallets via Registrator", async function() {
-        var anyAccount = accounts[0];
-        var registratorAccount = accounts[1];
-        var customerAccount = accounts[2];
-        var customerWallet1 = accounts[3];
-        var customerWallet2 = accounts[4];
-        var customerWallet3 = accounts[5];
+        const anyAccount = accounts[0];
+        const registratorAccount = accounts[1];
+        const customerAccount = accounts[2];
+        const customerWallet1 = accounts[3];
+        const customerWallet2 = accounts[4];
+        const customerWallet3 = accounts[5];
 
-        var registrator = await Registrator.new({from: registratorAccount});
-        var customer = await Customer.new(registrator.address, {from: customerAccount});
+        const registrator = await Registrator.new({from: registratorAccount});
+        const customer = await Customer.new(registrator.address, {from: customerAccount});
 
         assert.equal(await customer.walletsCount.call(), 0, "No one wallet were added");
 
@@ -40,32 +37,33 @@ contract('Customer', function(accounts) {
     });
 
     it("should add participations via Registrator", async function() {
-        var anyAccount = accounts[0];
-        var registratorAccount = accounts[1];
-        var customerAccount = accounts[2];
-        var customerWallet1 = accounts[3];
+        const anyAccount = accounts[0];
+        const registratorAccount = accounts[1];
+        const customerAccount = accounts[2];
+        const customerWallet1 = accounts[3];
 
-        var txid = 0x12345678;
-        var timestamp = + new Date();
-        var ethValue = 10;
+        const txid = 0x12345678;
+        const timestamp = + new Date();
+        const ethValue = 10;
         
-        var registrator = await Registrator.new({from: registratorAccount});
-        var customer = await Customer.new(registrator.address, {from: customerAccount});
+        const registrator = await Registrator.new({from: registratorAccount});
+        const customer = await Customer.new(registrator.address, {from: customerAccount});
         await registrator.askToVerifyCustomerWallet(customer.address, {from: customerWallet1});
-        
-        var event = registrator.AskToVerifyTransaction({_from:web3.eth.coinbase}, {fromBlock: 0, toBlock: 'latest'});
-        const promise = new Promise(resolve => event.watch(async function(error, response) {
-            event.stopWatching();
-            var coinSale = await CoinSale.new({from: registratorAccount});
-            await registrator.addVerifiedParticipation(txid, timestamp, coinSale.address, customerWallet1, ethValue, {from: registratorAccount});
-            assert.equal(await customer.transactionsCount.call(), 1, "Participation should be added");
-            resolve();
-        }));
         
         assert.equal(await customer.transactionsCount.call(), 0, "There should be no participations yet");
         await registrator.askToVerifyTransaction(txid, {from: customerAccount});
 
-        return await promise;
+        const event = registrator.AskToVerifyTransaction({_from:web3.eth.coinbase}, {fromBlock: 'latest'});
+        const promise = new Promise(resolve => event.watch(async function(error, response) {
+            
+            const coinSale = await CoinSale.new({from: registratorAccount});
+            await registrator.addVerifiedParticipation(txid, timestamp, coinSale.address, customerWallet1, ethValue, {from: registratorAccount});
+            assert.equal(await customer.transactionsCount.call(), 1, "Participation should be added");
+            
+            event.stopWatching();
+            resolve();
+        }));
+        await promise;
     });
 
 });
