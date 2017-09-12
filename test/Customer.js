@@ -54,15 +54,18 @@ contract('Customer', function(accounts) {
         await registrator.askToVerifyCustomerWallet(customer.address, {from: customerWallet1});
         
         var event = registrator.AskToVerifyTransaction({_from:web3.eth.coinbase}, {fromBlock: 0, toBlock: 'latest'});
-        event.watch(async function(error, response) {
+        const promise = new Promise(resolve => event.watch(async function(error, response) {
             event.stopWatching();
             var coinSale = await CoinSale.new({from: registratorAccount});
             await registrator.addVerifiedParticipation(txid, timestamp, coinSale.address, customerWallet1, ethValue, {from: registratorAccount});
             assert.equal(await customer.transactionsCount.call(), 1, "Participation should be added");
-        });
-
+            resolve();
+        }));
+        
         assert.equal(await customer.transactionsCount.call(), 0, "There should be no participations yet");
         await registrator.askToVerifyTransaction(txid, {from: customerAccount});
+
+        return await promise;
     });
 
 });
