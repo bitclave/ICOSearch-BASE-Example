@@ -4,6 +4,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./helpers/AvoidRecursiveCall.sol";
 import "./CoinSale.sol";
 import "./Registrator.sol";
+import "./Registered.sol";
 
 
 contract Customer is Registered, Ownable, AvoidRecursiveCall {

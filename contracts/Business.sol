@@ -23,8 +23,9 @@ contract Business is Registered, Ownable, AvoidRecursiveCall {
         return offers.length;
     }    
 
-    function createOffer() onlyOwner returns(Offer) {
-        Offer offer = new Offer(registrator, this);
+    function createOffer(CoinSale coinSale) onlyOwner returns(Offer) {
+        require(allCoinSales[coinSale]);
+        Offer offer = new Offer(registrator, coinSale);
         offer.transferOwnership(msg.sender);
         allOffers[offer] = true;
         offers.push(offer);

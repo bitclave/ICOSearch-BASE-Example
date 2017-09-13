@@ -5,6 +5,7 @@ import "./helpers/AvoidRecursiveCall.sol";
 import "./CoinSale.sol";
 import "./Business.sol";
 import "./Customer.sol";
+import "./Search.sol";
 
 
 contract Registrator is Ownable, AvoidRecursiveCall {
@@ -21,9 +22,11 @@ contract Registrator is Ownable, AvoidRecursiveCall {
     mapping(address => bool) public allCustomers;
     mapping(address => bool) public allBusinesses;
     mapping(address => bool) public allCoinSales;
+    mapping(address => bool) public allSearches;
     Customer[] public customers;
     Business[] public businesses;
     CoinSale[] public coinSales;
+    Search[] public searches;
 
     // Trusted properties, can only be filled by Registartor owner
     mapping(address => Customer) public customerByWallet;
@@ -45,6 +48,10 @@ contract Registrator is Ownable, AvoidRecursiveCall {
 
     function coinSalesCount() constant returns(uint) {
         return coinSales.length;
+    }
+
+    function searchesCount() constant returns(uint) {
+        return searches.length;
     }
 
     function createCustomer() avoidRecursiveCall returns(Customer) {
@@ -106,6 +113,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
     }
 
     function deleteCoinSale(CoinSale coinSale) avoidRecursiveCall onlyOwner {
+        require(coinSale.owner() == msg.sender);
         require(allCoinSales[coinSale]);
         delete allCoinSales[coinSale];
 
@@ -114,6 +122,31 @@ contract Registrator is Ownable, AvoidRecursiveCall {
                 delete coinSales[i];
                 coinSales[i] = coinSales[coinSales.length - 1];
                 coinSales.length -= 1;
+                return;
+            }
+        }
+
+        revert();
+    }
+
+    function createSearch() avoidRecursiveCall onlyOwner returns(Search) {
+        Search search = new Search(this);
+        search.transferOwnership(msg.sender);
+        allSearches[search] = true;
+        searches.push(search);
+        return search;
+    }
+
+    function deleteSearch(Search search) avoidRecursiveCall {
+        require(search.owner() == msg.sender);
+        require(allSearches[search]);
+        delete allCoinSales[search];
+
+        for (uint i = 0; i < searches.length; i++) {
+            if (searches[i] == search) {
+                delete searches[i];
+                searches[i] = searches[searches.length - 1];
+                searches.length -= 1;
                 return;
             }
         }
