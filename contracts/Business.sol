@@ -3,22 +3,16 @@ pragma solidity ^0.4.2;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./helpers/AvoidRecursiveCall.sol";
 import "./Registrator.sol";
+import "./Registered.sol";
 
 
-contract Business is Ownable, AvoidRecursiveCall {
+contract Business is Registered, Ownable, AvoidRecursiveCall {
 
-    Registrator public registrator;
     CoinSale[] public coinSales;
     
     event CoinSaleAdded(address wallet);
 
-    modifier onlyRegistrator {
-        require(msg.sender == address(registrator));
-        _;
-    }
-
-    function Business(Registrator registratorArg) {
-        registrator = registratorArg;
+    function Business(Registrator registratorArg) Registered(registratorArg) {
     }
 
     function coinSalesCount() constant returns(uint) {

@@ -6,22 +6,15 @@ import "./CoinSale.sol";
 import "./Registrator.sol";
 
 
-contract Customer is Ownable, AvoidRecursiveCall {
+contract Customer is Registered, Ownable, AvoidRecursiveCall {
     
-    Registrator public registrator;
     address[] public wallets;
     uint256[] public transactions; // txid[]
 
     event WalletAdded(address wallet);
     event TransactionAdded(uint256 txid);
 
-    modifier onlyRegistrator {
-        require(msg.sender == address(registrator));
-        _;
-    }
-
-    function Customer(Registrator registratorArg) {
-        registrator = registratorArg;
+    function Customer(Registrator registratorArg) Registered(registratorArg) {
     }
 
     function walletsCount() constant returns(uint) {

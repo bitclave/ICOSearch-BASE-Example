@@ -17,8 +17,15 @@ contract Registrator is Ownable, AvoidRecursiveCall {
         return size > 0;
     }
 
+    // Registered contracts
+    mapping(address => bool) public allCustomers;
+    mapping(address => bool) public allBusinesses;
+    mapping(address => bool) public allCoinSales;
+    Customer[] public customers;
+    Business[] public businesses;
+    CoinSale[] public coinSales;
+
     // Trusted properties, can only be filled by Registartor owner
-    CoinSale[] coinSales;
     mapping(address => Customer) public customerByWallet;
     mapping(address => Business) public businessByIcoCreator;
     mapping(uint256 => CoinSale.Participation) public participationByTxid;
@@ -28,6 +35,92 @@ contract Registrator is Ownable, AvoidRecursiveCall {
     // Event needs to be handled by Registrator Service and then call addVerifiedIcoCreator
     event AskToVerifyIcoCreator(Business business, address icoCreator);
     
+    function customersCount() constant returns(uint) {
+        return customers.length;
+    }
+
+    function businessesCount() constant returns(uint) {
+        return businesses.length;
+    }
+
+    function coinSalesCount() constant returns(uint) {
+        return coinSales.length;
+    }
+
+    function createCustomer() avoidRecursiveCall returns(Customer) {
+        Customer customer = new Customer(this);
+        customer.transferOwnership(msg.sender);
+        allCustomers[customer] = true;
+        customers.push(customer);
+        return customer;
+    }
+
+    function deleteCustomer(Customer customer) avoidRecursiveCall {
+        require(customer.owner() == msg.sender);
+        require(allCustomers[customer]);
+        delete allCustomers[customer];
+
+        for (uint i = 0; i < customers.length; i++) {
+            if (customers[i] == customer) {
+                delete customers[i];
+                customers[i] = customers[customers.length - 1];
+                customers.length -= 1;
+                return;
+            }
+        }
+
+        revert();
+    }
+
+    function createBusiness() avoidRecursiveCall returns(Business) {
+        Business business = new Business(this);
+        business.transferOwnership(msg.sender);
+        allBusinesses[business] = true;
+        businesses.push(business);
+        return business;
+    }
+
+    function deleteBusiness(Business business) avoidRecursiveCall {
+        require(business.owner() == msg.sender);
+        require(allBusinesses[business]);
+        delete allBusinesses[business];
+
+        for (uint i = 0; i < businesses.length; i++) {
+            if (businesses[i] == business) {
+                delete businesses[i];
+                businesses[i] = businesses[businesses.length - 1];
+                businesses.length -= 1;
+                return;
+            }
+        }
+
+        revert();
+    }
+
+    function createCoinSale() avoidRecursiveCall onlyOwner returns(CoinSale) {
+        CoinSale coinSale = new CoinSale(this);
+        coinSale.transferOwnership(owner);
+        allCoinSales[coinSale] = true;
+        coinSales.push(coinSale);
+        return coinSale;
+    }
+
+    function deleteCoinSale(CoinSale coinSale) avoidRecursiveCall onlyOwner {
+        require(allCoinSales[coinSale]);
+        delete allCoinSales[coinSale];
+
+        for (uint i = 0; i < coinSales.length; i++) {
+            if (coinSales[i] == coinSale) {
+                delete coinSales[i];
+                coinSales[i] = coinSales[coinSales.length - 1];
+                coinSales.length -= 1;
+                return;
+            }
+        }
+
+        revert();
+    }
+
     // Call only from wallet, not from smart-contract
     // to verify this wallet belongs to this customer
     function askToVerifyCustomerWallet(Customer customer) avoidRecursiveCall {
@@ -78,16 +171,10 @@ contract Registrator is Ownable, AvoidRecursiveCall {
     {
         require(business.registrator() == this);
         require(coinSale.owner() == owner);
+        require(allCoinSales[coinSale]);
 
         businessByIcoCreator[icoCreator] = business;
         business.addCoinSale(coinSale);
-    }
-
-    function addCoinSale(CoinSale coinSale) avoidRecursiveCall onlyOwner {
-        for (uint i = 0; i < coinSales.length; i++) {
-            require(coinSales[i].icoContract() != coinSale.icoContract());
-        }
-        coinSales.push(coinSale);
     }
 
     function checkCustomer(Customer customer) constant returns(bool) {
@@ -96,6 +183,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
 
     function checkCustomerWallets(Customer customer) constant returns(bool) {
         require(customer.registrator() == this);
+        require(allCustomers[customer]);
 
         for (uint i = 0; i < customer.walletsCount(); i++) {
             if (customerByWallet[customer.wallets(i)] != customer) {
@@ -107,6 +195,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
 
     function checkCustomerTransactions(Customer customer) constant returns(bool) {
         require(customer.registrator() == this);
+        require(allCustomers[customer]);
 
         for (uint i = 0; i < customer.transactionsCount(); i++) {
             uint256 txid = customer.transactions(i);
@@ -124,6 +213,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
 
     function checkBusinessCoinSales(Business business) constant returns(bool) {
         require(business.registrator() == this);
+        require(allBusinesses[business]);
 
         for (uint i = 0; i < business.coinSalesCount(); i++) {
             CoinSale coinSale = business.coinSales(i);

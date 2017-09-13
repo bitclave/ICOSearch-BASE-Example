@@ -3,9 +3,11 @@ pragma solidity ^0.4.2;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./helpers/AvoidRecursiveCall.sol";
 import "./Business.sol";
+import "./Registrator.sol";
+import "./Registered.sol";
 
 
-contract CoinSale is Ownable, AvoidRecursiveCall {
+contract CoinSale is Registered, Ownable, AvoidRecursiveCall {
 
     struct Participation {
         uint256 txid;
@@ -20,6 +22,9 @@ contract CoinSale is Ownable, AvoidRecursiveCall {
     uint public dateStart;
     uint public dateEnd;
     Business public business;
+
+    function CoinSale(Registrator registratorArg) Registered(registratorArg) {
+    }
 
     function setIcoContract(address icoContractArg) avoidRecursiveCall onlyOwner {
         icoContract = icoContractArg;
