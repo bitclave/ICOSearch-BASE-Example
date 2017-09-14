@@ -13,4 +13,8 @@ contract Search is Registered, Ownable, AvoidRecursiveCall {
     function Search(Registrator registratorArg) Registered(registratorArg) {
     }
 
+    function showOfferToCustomer(Offer offer, Customer customer) onlyOwner avoidRecursiveCall {
+        offer.showTo(customer);
+    }
+
 }

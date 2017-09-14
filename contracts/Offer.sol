@@ -8,17 +8,47 @@ import "./Registered.sol";
 import "./Business.sol";
 import "./Customer.sol";
 import "./CoinSale.sol";
+import "./Search.sol";
 
 
 contract Offer is Registered, Ownable, AvoidRecursiveCall {
 
-    CoinSale coinSale;
+    CoinSale public coinSale;
+
+    // Allowed Search engines
+    mapping(address => bool) public allSearches;
+    Search[] public searches;
 
     function Offer(Registrator registratorArg, CoinSale coinSaleArg) Registered(registratorArg) {
         coinSale = coinSaleArg;
     }
 
-    function show(Customer customer) onlyRegistrator {
+    function addSearch(Search search) onlyOwner avoidRecursiveCall {
+        require(!allSearches[search]);
+        allSearches[search] = true;
+        searches.push(search);
+    }
+
+    function deleteSearch(Search search) onlyOwner avoidRecursiveCall {
+        require(allSearches[search]);
+        delete allSearches[search];
+
+        for (uint i = 0; i < searches.length; i++) {
+            if (searches[i] == search) {
+                delete searches[i];
+                searches[i] = searches[searches.length - 1];
+                searches.length -= 1;
+                return;
+            }
+        }
+
+        revert();
+    }
+
+    function showTo(Customer customer) avoidRecursiveCall {
+        Search search = Search(msg.sender);
+        require(allSearches[search]);
+
         require(registrator == customer.registrator());
         require(registrator == coinSale.business().registrator());
         require(registrator.allCustomers(customer));
