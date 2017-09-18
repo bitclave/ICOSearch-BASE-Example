@@ -1,7 +1,7 @@
 pragma solidity ^0.4.2;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/StandardToken.sol";
 import "./helpers/AvoidRecursiveCall.sol";
 import "./Registrator.sol";
 import "./Registered.sol";
@@ -14,13 +14,17 @@ import "./Search.sol";
 contract Offer is Registered, Ownable, AvoidRecursiveCall {
 
     CoinSale public coinSale;
+    StandardToken tokenContract;
+    uint cpa;
 
     // Allowed Search engines
     mapping(address => bool) public allSearches;
     Search[] public searches;
 
-    function Offer(Registrator registratorArg, CoinSale coinSaleArg) Registered(registratorArg) {
+    function Offer(Registrator registratorArg, CoinSale coinSaleArg, address tokenContractArg, uint cpaArg) Registered(registratorArg) {
         coinSale = coinSaleArg;
+        tokenContract = StandardToken(tokenContractArg);
+        cpa = cpaArg;
     }
 
     function addSearch(Search search) onlyOwner avoidRecursiveCall {
@@ -54,9 +58,9 @@ contract Offer is Registered, Ownable, AvoidRecursiveCall {
         require(registrator.allCustomers(customer));
         require(registrator.allBusinesses(coinSale.business()));
         
-        //TODO: Send ERC20 coins to customer
-        //ERC20 token = ERC20(0x348438257643856483256475683425);
-        //token.transfer(customer.owner());
+        // Send ERC20 coins to customer wallet
+        tokenContract.transfer(customer.owner(), cpa / 2);
+        tokenContract.transfer(search.owner(), cpa / 2);
     }
 
 }

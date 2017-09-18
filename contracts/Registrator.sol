@@ -129,7 +129,7 @@ contract Registrator is Ownable, AvoidRecursiveCall {
         revert();
     }
 
-    function createSearch() avoidRecursiveCall onlyOwner returns(Search) {
+    function createSearch() avoidRecursiveCall returns(Search) {
         Search search = new Search(this);
         search.transferOwnership(msg.sender);
         allSearches[search] = true;

@@ -23,9 +23,9 @@ contract Business is Registered, Ownable, AvoidRecursiveCall {
         return offers.length;
     }    
 
-    function createOffer(CoinSale coinSale) onlyOwner returns(Offer) {
+    function createOffer(CoinSale coinSale, address tokenContract, uint cpa) onlyOwner returns(Offer) {
         require(allCoinSales[coinSale]);
-        Offer offer = new Offer(registrator, coinSale);
+        Offer offer = new Offer(registrator, coinSale, tokenContract, cpa);
         offer.transferOwnership(msg.sender);
         allOffers[offer] = true;
         offers.push(offer);
@@ -53,13 +53,30 @@ contract Business is Registered, Ownable, AvoidRecursiveCall {
         return coinSales.length;
     }
 
-    function addCoinSale(CoinSale coinSale) avoidRecursiveCall onlyRegistrator {
+    function addCoinSale(CoinSale coinSale) avoidRecursiveCall onlyRegistratorOrRegistratorOwner {
         for (uint i = 0; i < coinSales.length; i++) {
             require(coinSales[i] != coinSale);
         }
         allCoinSales[coinSale] = true;
         coinSales.push(coinSale);
         CoinSaleAdded(coinSale);
+    }
+
+    function deleteCoinSale(CoinSale coinSale) avoidRecursiveCall onlyRegistratorOrRegistratorOwner {
+        require(coinSale.owner() == registrator.owner());
+        require(allCoinSales[coinSale]);
+        delete allCoinSales[coinSale];
+
+        for (uint i = 0; i < coinSales.length; i++) {
+            if (coinSales[i] == coinSale) {
+                delete coinSales[i];
+                coinSales[i] = coinSales[coinSales.length - 1];
+                coinSales.length -= 1;
+                return;
+            }
+        }
+
+        revert();
     }
 
 }
